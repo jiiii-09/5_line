@@ -280,3 +280,52 @@ function getColorFromWord(txt, prevEmotion = null) {
   }
   return emotionColors[currentEmotion];
 }
+
+function startRecognition() {
+  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = "ko-KR";
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onresult = (event) => {
+    let lastResult = event.results[event.results.length - 1];
+    let transcript = lastResult[0].transcript.trim();
+
+    if (lastResult.isFinal) {
+      addLine(transcript);
+      tempTranscript = "";
+    } else {
+      tempTranscript = transcript;
+    }
+  };
+
+  //------------------------------------------------------------------
+  // 🚀 핵심: 인식이 끝나면 자동 재시작
+  //------------------------------------------------------------------
+  recognition.onend = () => {
+    console.warn("⛔ Recognition ended → restarting...");
+    restartRecognition();
+  };
+
+  //------------------------------------------------------------------
+  // 🚀 에러 발생해도 자동 재시작
+  //------------------------------------------------------------------
+  recognition.onerror = (event) => {
+    console.warn("⚠️ Recognition error:", event.error);
+    restartRecognition();
+  };
+
+  recognition.start();
+}
+
+// 🔁 안전한 재시작
+function restartRecognition() {
+  // 잠깐 딜레이 후 다시 재부팅
+  setTimeout(() => {
+    try {
+      startRecognition();
+    } catch (e) {
+      console.error("Restart failed:", e);
+    }
+  }, 300);
+}
