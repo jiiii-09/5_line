@@ -138,7 +138,7 @@ function draw() {
     let scaledVol = pow(vol * 15, 2);
     let size = map(scaledVol, 0, 1, 20, 220);
     size = constrain(size, 20, 220);
-    size *= 5; 
+    size *= 3; 
 
     textFont("sans-serif");
     textSize(size);
