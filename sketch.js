@@ -1,7 +1,7 @@
 let mic;
 let recognition;
 let lines = [];
-let baseLineHeight = 25;
+let baseLineHeight = 25*3;
 let tempTranscript = "";
 let scrollOffset = 0;
 
@@ -122,14 +122,14 @@ function draw() {
       let wWidth = textWidth(w + " ");
       if (x + wWidth > width - 50) {
         x = 50;
-        y += max(baseLineHeight, l.size * 0.8);
+        y += l.size * 0.9;   // 🔥 글자 크기 기준으로 줄 높이 자동 결정
         lineCount++;
       }
       text(w, x, y);
       x += wWidth;
     }
 
-    yOffset += lineCount * max(baseLineHeight, l.size * 0.8);
+    yOffset += lineCount * (l.size * 0.9);
   }
 
   // 임시 회색 텍스트 (항상 기본 폰트)
@@ -225,7 +225,7 @@ function calcTotalTextHeight() {
     let lineCount = 1;
     textSize(l.size);
     let words = l.txt.split(" ");
-    let thisLineHeight = max(baseLineHeight, l.size * 0.8);
+    let thisLineHeight = l.size * 0.9;   // 🔥 글자 크기 기준 줄 높이
 
     for (let w of words) {
       let wWidth = textWidth(w + " ");
