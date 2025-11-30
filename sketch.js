@@ -138,6 +138,7 @@ function draw() {
     let scaledVol = pow(vol * 15, 2);
     let size = map(scaledVol, 0, 1, 20, 220);
     size = constrain(size, 20, 220);
+    size *= 3; 
 
     textFont("sans-serif");
     textSize(size);
@@ -163,6 +164,7 @@ function addLine(txt) {
   let vol = mic.getLevel();
   let baseSize = map(pow(vol * 15, 2), 0, 1, 20, 220);
   baseSize = constrain(baseSize, 20, 220);
+  baseSize *= 3;     // 🔥 전체 글자 크기 3배 증가
 
   let wordColors = {};
   let wordFonts = {}; // 🎯 단어별 폰트 저장용
