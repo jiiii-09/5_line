@@ -1,7 +1,7 @@
 let mic;
 let recognition;
 let lines = [];
-let baseLineHeight = 25*3;
+let baseLineHeight = 25*8;
 let tempTranscript = "";
 let scrollOffset = 0;
 
@@ -138,7 +138,7 @@ function draw() {
     let scaledVol = pow(vol * 15, 2);
     let size = map(scaledVol, 0, 1, 20, 220);
     size = constrain(size, 20, 220);
-    size *= 3; 
+    size *= 8; 
 
     textFont("sans-serif");
     textSize(size);
