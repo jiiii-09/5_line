@@ -1,7 +1,7 @@
 let mic;
 let recognition;
 let lines = [];
-let baseLineHeight = 25*10;
+let baseLineHeight = 25;
 let tempTranscript = "";
 let scrollOffset = 0;
 
@@ -99,10 +99,14 @@ function draw() {
   background(0, 40);
 
   let totalHeight = calcTotalTextHeight();
-  let visibleHeight = height - 150;
-  if (totalHeight > visibleHeight) {
-    scrollOffset = totalHeight - visibleHeight;
-  }
+let visibleHeight = height - 150;
+
+// 자동스크롤은 "새로운 문장이 추가될 때만" 실행
+if (scrollOffset < totalHeight - visibleHeight - 20) {
+  // 사용자가 이미 위쪽을 보고 있으면 자동으로 건드리지 않음
+  scrollOffset = totalHeight - visibleHeight;
+}
+
 
   push();
   translate(0, -scrollOffset);
@@ -122,14 +126,14 @@ function draw() {
       let wWidth = textWidth(w + " ");
       if (x + wWidth > width - 50) {
         x = 50;
-        y += l.size * 0.9;   // 🔥 글자 크기 기준으로 줄 높이 자동 결정
+        y += max(baseLineHeight, l.size * 0.8);
         lineCount++;
       }
       text(w, x, y);
       x += wWidth;
     }
 
-    yOffset += lineCount * (l.size * 0.9);
+    yOffset += lineCount * max(baseLineHeight, l.size * 0.8);
   }
 
   // 임시 회색 텍스트 (항상 기본 폰트)
@@ -138,7 +142,6 @@ function draw() {
     let scaledVol = pow(vol * 15, 2);
     let size = map(scaledVol, 0, 1, 20, 220);
     size = constrain(size, 20, 220);
-    size *= 3; 
 
     textFont("sans-serif");
     textSize(size);
@@ -164,7 +167,6 @@ function addLine(txt) {
   let vol = mic.getLevel();
   let baseSize = map(pow(vol * 15, 2), 0, 1, 20, 220);
   baseSize = constrain(baseSize, 20, 220);
-  baseSize *= 3;     // 🔥 전체 글자 크기 3배 증가
 
   let wordColors = {};
   let wordFonts = {}; // 🎯 단어별 폰트 저장용
@@ -225,7 +227,7 @@ function calcTotalTextHeight() {
     let lineCount = 1;
     textSize(l.size);
     let words = l.txt.split(" ");
-    let thisLineHeight = l.size * 0.9;   // 🔥 글자 크기 기준 줄 높이
+    let thisLineHeight = max(baseLineHeight, l.size * 0.8);
 
     for (let w of words) {
       let wWidth = textWidth(w + " ");
@@ -262,12 +264,12 @@ function startRecognition() {
 }
 
 function getEmotionFromWord(txt) {
-  if (["기뻐", "기쁘", "행복", "좋", "즐거워", "웃", "아름", "훌륭", "평화", "만족","빛","사랑","가볍","안녕"].some(w => txt.includes(w))) return "joy";
-  if (["슬퍼", "우울", "눈물", "외로", "잃", "그리","망각","죄송","아비규환","그림자","패배","무겁","슬픈","슬프"].some(w => txt.includes(w))) return "sadness";
+  if (["기뻐", "기쁘", "행복", "좋", "즐거워", "웃", "아름", "훌륭", "평화", "만족","빛","사랑","가볍","안녕", "햇살", "자부심", "순수"].some(w => txt.includes(w))) return "joy";
+  if (["슬퍼", "우울", "눈물", "외로", "잃", "그리","망각","죄송","아비규환","그림자","패배","무겁","슬픈","슬프", "불행"].some(w => txt.includes(w))) return "sadness";
   if (["놀라", "깜짝", "충격"].some(w => txt.includes(w))) return "surprise";
   if (["무서", "불안", "공포", "긴장", "염려","두려","몸부림","걱정"].some(w => txt.includes(w))) return "fear";
-  if (["싫", "혐오", "불쾌", "않", "징그러", "나쁘"].some(w => txt.includes(w))) return "disgust";
-  if (["화", "짜증", "분노", "불행","투쟁","파멸"].some(w => txt.includes(w))) return "anger";
+  if (["싫", "혐오", "불쾌", "않", "징그러", "나쁘","편견" ].some(w => txt.includes(w))) return "disgust";
+  if (["화", "짜증", "분노", "불행","투쟁","파멸", "오만"].some(w => txt.includes(w))) return "anger";
   return null;
 }
 
@@ -283,51 +285,11 @@ function getColorFromWord(txt, prevEmotion = null) {
   return emotionColors[currentEmotion];
 }
 
-function startRecognition() {
-  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "ko-KR";
-  recognition.continuous = true;
-  recognition.interimResults = true;
+function mouseWheel(event) {
+  // 스크롤 방향 반대로 (휠 내리면 화면 아래→ scrollOffset 증가)
+  scrollOffset += event.delta * 0.3;
 
-  recognition.onresult = (event) => {
-    let lastResult = event.results[event.results.length - 1];
-    let transcript = lastResult[0].transcript.trim();
-
-    if (lastResult.isFinal) {
-      addLine(transcript);
-      tempTranscript = "";
-    } else {
-      tempTranscript = transcript;
-    }
-  };
-
-  //------------------------------------------------------------------
-  // 🚀 핵심: 인식이 끝나면 자동 재시작
-  //------------------------------------------------------------------
-  recognition.onend = () => {
-    console.warn("⛔ Recognition ended → restarting...");
-    restartRecognition();
-  };
-
-  //------------------------------------------------------------------
-  // 🚀 에러 발생해도 자동 재시작
-  //------------------------------------------------------------------
-  recognition.onerror = (event) => {
-    console.warn("⚠️ Recognition error:", event.error);
-    restartRecognition();
-  };
-
-  recognition.start();
+  // 최소/최대 제한
+  scrollOffset = constrain(scrollOffset, 0, calcTotalTextHeight() - (height - 150));
 }
 
-// 🔁 안전한 재시작
-function restartRecognition() {
-  // 잠깐 딜레이 후 다시 재부팅
-  setTimeout(() => {
-    try {
-      startRecognition();
-    } catch (e) {
-      console.error("Restart failed:", e);
-    }
-  }, 300);
-}
